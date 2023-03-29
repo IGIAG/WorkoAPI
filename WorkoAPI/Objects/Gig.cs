@@ -14,6 +14,8 @@
 
         public bool active;
 
+        public IEnumerable<string> solutions;
+
         public Gig(string id, string title, string description, string authorUserId, int rewardPoints, bool active)
         {
             this.id = id;
@@ -22,6 +24,7 @@
             this.authorUserId = authorUserId;
             this.rewardPoints = rewardPoints;
             this.active = active;
+            solutions = new List<string>();
         }
     }
 }
