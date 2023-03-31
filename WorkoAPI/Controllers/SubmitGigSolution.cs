@@ -22,15 +22,7 @@ namespace WorkoAPI.Controllers
         {
             using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
             {
-                try
-                {
-                    Token dbToken = session.Query<Token>().Where(x => x.tokenSecret == token && x.userId == userId).First();
-                    if (Double.Parse(dbToken.expiryUnix) < DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds) { session.Delete(dbToken); session.SaveChanges(); ; return Unauthorized(); }
-                }
-                catch
-                {
-                    return Unauthorized();
-                }
+                if(!Token.verify(userId,token)){ return Unauthorized();}
 
                 User user = session.Query<User>().Where(x => x.Id == userId).FirstOrDefault();
                 Gig? gig = session.Query<Gig>().Where(x => x.id == gigId && x.active == true).First();

@@ -17,19 +17,11 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "SelectGigAnswer")]
-        public IActionResult Post([FromForm]string userId, [FromForm]string token, [FromForm]string gigId, [FromForm]string solutionId)
+        public async Task<IActionResult> Post([FromForm]string userId, [FromForm]string token, [FromForm]string gigId, [FromForm]string solutionId)
         {
             using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
             {
-                try
-                {
-                    Token dbToken = session.Query<Token>().Where(x => x.tokenSecret == token && x.userId == userId).First();
-                    if (Double.Parse(dbToken.expiryUnix) < DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds) { session.Delete(dbToken); session.SaveChanges(); ; return Unauthorized(); }
-                }
-                catch
-                {
-                    return Unauthorized();
-                }
+                if(!Token.verify(userId,token)){ return Unauthorized();}
                 
                 
                 Gig? gig = session.Query<Gig>().Where(x => x.id == gigId && x.active == true).First();
@@ -42,6 +34,7 @@ namespace WorkoAPI.Controllers
                 User solver = session.Query<User>().Where(x => x.Id == solution.authorId).First();
 
                 solver.balance += gig.rewardPoints;
+                Logger.logTransaction(gig.authorUserId,solver.Id,gig.rewardPoints);
 
                 session.SaveChanges();
                 return Ok();

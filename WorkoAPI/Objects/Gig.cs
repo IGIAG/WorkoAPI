@@ -2,19 +2,19 @@
 {
     public class Gig
     {
-        public string id;
+        public string id {get;set;}
 
-        public string title;
+        public string title {get;set;}
 
-        public string description;
+        public string description {get;set;}
 
-        public string authorUserId;
+        public string authorUserId {get;set;}
 
-        public int rewardPoints;
+        public int rewardPoints {get;set;}
 
-        public bool active;
+        public bool active {get;set;}
 
-        public IEnumerable<string> solutions;
+        public IEnumerable<string> solutions {get;set;}
 
         public Gig(string id, string title, string description, string authorUserId, int rewardPoints, bool active)
         {
