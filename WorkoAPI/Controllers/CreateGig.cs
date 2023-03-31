@@ -17,7 +17,7 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "CreateGig")]
-        public IActionResult Post([FromForm]string userId, [FromForm]string token, [FromForm] string title, [FromForm]string description, [FromForm]int reward)
+        public IActionResult Post([FromForm]string userId, [FromForm]string token, [FromForm] string title, [FromForm]string description,[FromForm]string tags, [FromForm]int reward)
         {
             using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
             {
@@ -30,7 +30,8 @@ namespace WorkoAPI.Controllers
                     return BadRequest("User too poor");
                 }
                 user.balance -= reward;
-                Gig gig = new Gig(Guid.NewGuid().ToString(), title, description, userId, reward, true);
+                IEnumerable<string> tagsEnumeralbe = tags.Split(' ');
+                Gig gig = new Gig(Guid.NewGuid().ToString(), title, description, userId, reward,tagsEnumeralbe, true);
                 session.Store(gig);
                 session.SaveChanges();
                 return Ok();

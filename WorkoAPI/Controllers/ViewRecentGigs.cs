@@ -18,13 +18,14 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpGet(Name = "ViewRecentGigs")]
-        public IEnumerable<string> Get([FromQuery]int n)
+        public IEnumerable<string> Get([FromQuery]int n,[FromQuery]string? tag)
         {
             using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
             {
                 List<string> gigIds = new List<string>();
                 List<Gig> gigs = new List<Gig>();
-                gigs = session.Query<Gig>().Take(n).ToList();
+                if(tag == null) { gigs = session.Query<Gig>().Take(n).ToList(); }
+                else { gigs = session.Query<Gig>().Where(x => x.tags.Contains(tag)).Take(n).ToList(); }
                 foreach (Gig g in gigs)
                 {
                     gigIds.Add(g.id);

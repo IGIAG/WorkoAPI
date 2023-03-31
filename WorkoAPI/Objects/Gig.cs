@@ -16,7 +16,9 @@
 
         public IEnumerable<string> solutions {get;set;}
 
-        public Gig(string id, string title, string description, string authorUserId, int rewardPoints, bool active)
+        public IEnumerable<string> tags {get;set;}
+
+        public Gig(string id, string title, string description, string authorUserId, int rewardPoints,IEnumerable<string> tags, bool active)
         {
             this.id = id;
             this.title = title;
@@ -25,6 +27,7 @@
             this.rewardPoints = rewardPoints;
             this.active = active;
             solutions = new List<string>();
+            this.tags = tags;
         }
     }
 }
