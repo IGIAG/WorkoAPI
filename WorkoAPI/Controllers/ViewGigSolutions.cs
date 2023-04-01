@@ -11,29 +11,27 @@ namespace WorkoAPI.Controllers
     public class ViewGigSolutions : ControllerBase
     {
 
-        private readonly ILogger<ViewGigSolutions> _logger;
+        //private readonly ILogger<ViewGigSolutions> _logger;
 
-        public ViewGigSolutions(ILogger<ViewGigSolutions> logger)
+        /*public ViewGigSolutions(ILogger<ViewGigSolutions> logger)
         {
             _logger = logger;
-        }
+        }*/
 
         [HttpGet(Name = "ViewGigSolutions")]
         public async Task<IActionResult> Get([FromQuery]string gigId)
         {
-            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
-            {
-                Gig? gig = null;
-                //Try to find the gig
-                try { gig = await session.Query<Gig>().Where(x => x.id == gigId).FirstAsync(); }
-                catch { return NotFound(); }
+            using IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession();
+            Gig? gig = null;
+            //Try to find the gig
+            try { gig = await session.Query<Gig>().Where(x => x.id == gigId).FirstAsync(); }
+            catch { return NotFound(); }
 
-                List<string> solutionIds = gig.solutions.ToList();
-                session.SaveChangesAsync();
-                return Ok(JsonSerializer.Serialize(solutionIds));
-            }
+            List<string> solutionIds = gig.solutions.ToList();
+            _ = session.SaveChangesAsync();
+            return Ok(JsonSerializer.Serialize(solutionIds));
 
-            
+
         }       
     }
 }
