@@ -3,6 +3,7 @@ using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using System.Collections;
 using WorkoAPI.Objects;
+using System.Text.Json;
 
 namespace WorkoAPI.Controllers
 {
@@ -19,7 +20,7 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpGet(Name = "ViewRecentGigs")]
-        public async Task<IEnumerable<string>> Get([FromQuery]int n, [FromQuery]string tag)
+        public async Task<IActionResult> Get([FromQuery]int n, [FromQuery]string tag)
         {
             using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
@@ -31,9 +32,11 @@ namespace WorkoAPI.Controllers
 
 
                 //Get N most recent gigs.(Use the "everything" tag to get all recent gigs)
-                if (tag == "everything") { gigs = await session.Query<Gig>().Take(n).ToListAsync(); }
-                else { gigs = await session.Query<Gig>().Where(x => x.tags.Contains(tag)).Take(n).ToListAsync(); }
-                
+                try
+                {
+                    if (tag == "everything") { gigs = await session.Query<Gig>().Take(n).ToListAsync(); }
+                    else { gigs = await session.Query<Gig>().Where(x => x.tags.Contains(tag)).Take(n).ToListAsync(); }
+                } catch { return NotFound(); }
                 
                 foreach (Gig g in gigs)
                 {
@@ -41,7 +44,7 @@ namespace WorkoAPI.Controllers
                     gigIds.Add(g.id);
                 }
                 session.SaveChangesAsync();
-                return gigIds;
+                return Ok(JsonSerializer.Serialize(gigIds));
             }
 
             

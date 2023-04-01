@@ -3,6 +3,7 @@ using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using System.Reflection.Metadata;
 using WorkoAPI.Objects;
+using System.Text.Json;
 
 namespace WorkoAPI.Controllers
 {
@@ -39,7 +40,7 @@ namespace WorkoAPI.Controllers
 
                 await session.StoreAsync(token);
                 await session.SaveChangesAsync();
-                return Ok(token.tokenSecret);
+                return Ok(JsonSerializer.Serialize(token));
             }
 
             

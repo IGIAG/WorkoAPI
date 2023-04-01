@@ -3,7 +3,7 @@ using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using System.Collections;
 using WorkoAPI.Objects;
-
+using System.Text.Json;
 namespace WorkoAPI.Controllers
 {
     [ApiController]
@@ -19,18 +19,18 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpGet(Name = "ViewGigSolutions")]
-        public async Task<IEnumerable<string>> Get([FromQuery]string gigId)
+        public async Task<IActionResult> Get([FromQuery]string gigId)
         {
             using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
                 Gig? gig = null;
                 //Try to find the gig
                 try { gig = await session.Query<Gig>().Where(x => x.id == gigId).FirstAsync(); }
-                catch { return null; }
+                catch { return NotFound(); }
 
                 List<string> solutionIds = gig.solutions.ToList();
                 session.SaveChangesAsync();
-                return solutionIds;
+                return Ok(JsonSerializer.Serialize(solutionIds));
             }
 
             

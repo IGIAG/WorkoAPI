@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
+using System.Text.Json;
 using WorkoAPI.Objects;
 
 namespace WorkoAPI.Controllers
@@ -22,28 +23,12 @@ namespace WorkoAPI.Controllers
         {
             using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
-                //Check if we are looking for username or id
-                if (username == null)
-                {
-                    User? user = null;
-                    //Try to find the user in DB
-                    try { user = await session.Query<User>().Where(x => x.Id == id).FirstAsync(); }
-                    catch { return NotFound(); }
-
-                    await session.SaveChangesAsync();
-                    return Ok(user.Name);
-                }
-                else if(id == null)
-                {
-                    //Try to find the user in DB
-                    User? user = null;
-                    try { user = await session.Query<User>().Where(x => x.Name == username).FirstAsync(); }
-                    catch { return NotFound(); }
-
-                    await session.SaveChangesAsync();
-                    return Ok(user.Id);
-                }
-                return BadRequest();
+                User? user = null;
+                //Try to find the user in DB
+                try { user = await session.Query<User>().Where(x => x.Id == id || x.Name == username).FirstAsync(); }
+                catch { return NotFound(); }
+                PublicUserData userData = new PublicUserData(user.Id, user.Name);
+                return Ok(JsonSerializer.Serialize(userData));
             }
         }       
     }
