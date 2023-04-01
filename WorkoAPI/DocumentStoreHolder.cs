@@ -1,4 +1,5 @@
 ﻿using Raven.Client.Documents;
+using Raven.Client.Util;
 using System.Security.Cryptography.X509Certificates;
 
 namespace WorkoAPI;
@@ -22,7 +23,13 @@ public static class DocumentStoreHolder
             {
                 Urls = new[] { "https://a.free.sd-net.ravendb.cloud" },
                 Database = "Worko",
-                Certificate = clientCertificate
+                Certificate = clientCertificate,
+                Conventions =
+                {
+                    MaxNumberOfRequestsPerSession = 10,
+                    UseOptimisticConcurrency = true,
+                    UseCompression = true
+                }
             };
 
             return store.Initialize();

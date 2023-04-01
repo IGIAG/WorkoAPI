@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using WorkoAPI.Objects;
 
@@ -17,28 +18,27 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "CreateGig")]
-        public IActionResult Post([FromForm]string userId, [FromForm]string token, [FromForm] string title, [FromForm]string description, [FromForm]int reward)
+        public async Task<IActionResult> Post([FromForm]string userId, [FromForm]string token, [FromForm] string title, [FromForm]string description,[FromForm]string tags, [FromForm]int reward)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
-                try
-                {
-                    Token dbToken = session.Query<Token>().Where(x => x.tokenSecret == token && x.userId == userId).First();
-                    if (Double.Parse(dbToken.expiryUnix) < DateTime.UtcNow.Subtract(new DateTime(1970, 1, 1)).TotalSeconds) { session.Delete(dbToken); session.SaveChanges(); ; return Unauthorized(); }
-                }
-                catch
-                {
-                    return Unauthorized();
-                }
-                User user = session.Query<User>().Where(x => x.Id == userId).FirstOrDefault();
-                if (user.balance < reward)
-                {
-                    return BadRequest("User too poor");
-                }
+                //User authentication.
+                if(!Token.verify(userId,token)){ return Unauthorized();}
+
+                //Checking if the author has enough points
+                User user = await session.Query<User>().Where(x => x.Id == userId).FirstOrDefaultAsync();
+                if (user.balance < reward) { return BadRequest("User too poor");}
+
+                //Formatting the tags
+                string[] tagsList = tags.Split(' ');
+
+
+                //Moving the funds to a new gig
                 user.balance -= reward;
-                Gig gig = new Gig(Guid.NewGuid().ToString(), title, description, userId, reward, true);
-                session.Store(gig);
-                session.SaveChanges();
+                Gig gig = new Gig(Guid.NewGuid().ToString(), title, description, userId, reward,tagsList, true);
+                await session.StoreAsync(gig);
+
+                await session.SaveChangesAsync();
                 return Ok();
             }
 

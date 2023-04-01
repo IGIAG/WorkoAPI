@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using WorkoAPI.Objects;
 
@@ -17,20 +18,29 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpGet(Name = "ViewUserDisplayName")]
-        public IActionResult Get([FromQuery]string? id, [FromQuery] string? username)
+        public async Task<IActionResult> Get([FromQuery]string? id, [FromQuery] string? username)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
+                //Check if we are looking for username or id
                 if (username == null)
                 {
-                    User user = session.Query<User>().Where(x => x.Id == id).First();
-                    session.SaveChanges();
+                    User? user = null;
+                    //Try to find the user in DB
+                    try { user = await session.Query<User>().Where(x => x.Id == id).FirstAsync(); }
+                    catch { return NotFound(); }
+
+                    await session.SaveChangesAsync();
                     return Ok(user.Name);
                 }
                 else if(id == null)
                 {
-                    User user = session.Query<User>().Where(x => x.Name == username).First();
-                    session.SaveChanges();
+                    //Try to find the user in DB
+                    User? user = null;
+                    try { user = await session.Query<User>().Where(x => x.Name == username).FirstAsync(); }
+                    catch { return NotFound(); }
+
+                    await session.SaveChangesAsync();
                     return Ok(user.Id);
                 }
                 return BadRequest();

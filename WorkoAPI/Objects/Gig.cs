@@ -2,21 +2,23 @@
 {
     public class Gig
     {
-        public string id;
+        public string id {get;set;}
 
-        public string title;
+        public string title {get;set;}
 
-        public string description;
+        public string description {get;set;}
 
-        public string authorUserId;
+        public string authorUserId {get;set;}
 
-        public int rewardPoints;
+        public int rewardPoints {get;set;}
 
-        public bool active;
+        public bool active {get;set;}
 
-        public IEnumerable<string> solutions;
+        public IEnumerable<string> solutions {get;set;}
 
-        public Gig(string id, string title, string description, string authorUserId, int rewardPoints, bool active)
+        public IEnumerable<string> tags { get; set; }
+
+        public Gig(string id, string title, string description, string authorUserId, int rewardPoints,IEnumerable<string> tags, bool active)
         {
             this.id = id;
             this.title = title;
@@ -24,6 +26,7 @@
             this.authorUserId = authorUserId;
             this.rewardPoints = rewardPoints;
             this.active = active;
+            this.tags = tags;
             solutions = new List<string>();
         }
     }

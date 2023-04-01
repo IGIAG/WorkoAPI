@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Raven.Client.Documents.Session;
 using WorkoAPI.Objects;
+using HashLib;
+using Raven.Client.Documents;
 
 namespace WorkoAPI.Controllers
 {
@@ -17,13 +19,21 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "CreateUser")]
-        public IActionResult Post([FromForm]string login, [FromForm]string password, [FromForm]string email)
+        public async Task<IActionResult> Post([FromForm]string login, [FromForm]string password, [FromForm]string email)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
+                //Check if user exists
+                User? existant = null;
+                try { existant = await session.Query<User>().Where(x => x.Name == login).FirstAsync(); }catch { }
+                if (existant != null) { return Conflict(); }
+
+                //Generate the password hash and create the user
+                password = PasswordSecurity.hashMe(password);
                 User user = new User(Guid.NewGuid().ToString(),login,email,password);
-                session.Store(user);
-                session.SaveChanges();
+                await session.StoreAsync(user);
+
+                await session.SaveChangesAsync();
             }
 
             return Ok();
