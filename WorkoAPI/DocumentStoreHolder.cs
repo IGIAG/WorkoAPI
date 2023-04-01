@@ -14,10 +14,10 @@ namespace WorkoAPI;
 public static class DocumentStoreHolder
 {
     private static readonly Lazy<IDocumentStore> LazyStore =
-        new Lazy<IDocumentStore>(() =>
+        new (() =>
         {
             //If you get an exception here you need to import the certificate for the database. Get it from the DB owner.
-            X509Certificate2 clientCertificate = new X509Certificate2("./cert.pfx");
+            X509Certificate2 clientCertificate = new("./cert.pfx");
 
             var store = new DocumentStore
             {
