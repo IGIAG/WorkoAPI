@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using System.Xml.Linq;
 using WorkoAPI.Objects;
@@ -18,23 +19,30 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "SubmitGigSolution")]
-        public IActionResult Post([FromForm] string userId, [FromForm] string token, [FromForm] string gigId, [FromForm]string content)
+        public async Task<IActionResult> Post([FromForm] string userId, [FromForm] string token, [FromForm] string gigId, [FromForm]string content)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
+                //User authentication
                 if(!Token.verify(userId,token)){ return Unauthorized();}
 
-                User user = session.Query<User>().Where(x => x.Id == userId).FirstOrDefault();
-                Gig? gig = session.Query<Gig>().Where(x => x.id == gigId && x.active == true).First();
+                //Get the user and gig
+                User user = await session.Query<User>().Where(x => x.Id == userId).FirstOrDefaultAsync();
+                Gig? gig = await session.Query<Gig>().Where(x => x.id == gigId && x.active == true).FirstAsync();
+
+                //Check if gig exists
                 if (gig == null) { return NotFound("Gig doesen't exist!"); }
 
+                //Create the solution
                 Solution solution = new Solution(Guid.NewGuid().ToString(), user.Id, gig.id, content);
 
+                //Add solution to gig
                 gig.solutions = gig.solutions.Append(solution.id);
-                session.Store(gig);
-                session.Store(solution);
+                session.StoreAsync(solution);
+                
+                await session.StoreAsync(gig);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
                 return Ok();
             }
 

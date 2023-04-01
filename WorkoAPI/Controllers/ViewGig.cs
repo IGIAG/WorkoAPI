@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Raven.Client.Documents.Session;
 using WorkoAPI.Objects;
 using System.Text.Json;
+using Raven.Client.Documents;
 
 namespace WorkoAPI.Controllers
 {
@@ -18,12 +19,18 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpGet(Name = "ViewGig")]
-        public IActionResult Get([FromQuery]string id)
+        public async Task<IActionResult> Get([FromQuery]string id)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
-                Gig gig = session.Query<Gig>().Where(x => x.id == id).First();
-                session.SaveChanges();
+                //Try to find the gig
+                Gig? gig = null;
+                try { gig = await session.Query<Gig>().Where(x => x.id == id).FirstAsync(); }
+                catch { return NotFound(); }
+
+                session.SaveChangesAsync();
+
+                //Serialize gig as json
                 return Ok(JsonSerializer.Serialize(gig));
             }
 

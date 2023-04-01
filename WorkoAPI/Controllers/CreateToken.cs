@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Raven.Client.Documents;
 using Raven.Client.Documents.Session;
 using System.Reflection.Metadata;
 using WorkoAPI.Objects;
@@ -18,24 +19,26 @@ namespace WorkoAPI.Controllers
         }
 
         [HttpPost(Name = "CreateToken")]
-        public IActionResult Post([FromForm] string login, [FromForm] string password)
+        public async Task<IActionResult> Post([FromForm] string login, [FromForm] string password)
         {
-            using (IDocumentSession session = DocumentStoreHolder.Store.OpenSession())
+            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
             {
-                User user = session.Query<User>().Where(x => x.Name == login && x.Password == password).First();
-                try
-                {
-                    Token oldToken = session.Query<Token>().Where(x => x.userId == user.Id).First();
-                    session.Delete(oldToken);
-                }
-                catch
-                {
+                //Hashing the password
+                password = PasswordSecurity.hashMe(password);
 
-                }
+                //Check if user exists with that username and password hash.
+                User? user = null;
+                try { user = await session.Query<User>().Where(x => x.Name == login && x.Password == password).FirstAsync();}
+                catch {return Unauthorized(); }
+
+                //Removing the old token
+                try { Token oldToken = await session.Query<Token>().Where(x => x.userId == user.Id).FirstAsync(); session.Delete(oldToken);} catch { }
+
+                //Generating the new token
                 Token token = new Token(SecretStringBuilder.getSecretString(48), user.Id, DateTime.UtcNow.AddDays(31).Subtract(new DateTime(1970, 1, 1)).TotalSeconds.ToString());
 
-                session.Store(token);
-                session.SaveChanges();
+                await session.StoreAsync(token);
+                await session.SaveChangesAsync();
                 return Ok(token.tokenSecret);
             }
 
