@@ -4,9 +4,9 @@ namespace WorkoAPI.Objects
 {
     public class Token
     {
-        public string tokenSecret;
-        public string userId;
-        public string expiryUnix;
+        public string tokenSecret { get; set; }
+        public string userId { get; set; }
+        public string expiryUnix { get; set; }
 
         public Token(string tokenSecret, string userId, string expiryUnix)
         {

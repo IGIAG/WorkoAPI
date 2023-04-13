@@ -6,7 +6,7 @@ namespace WorkoAPI
     {
         private static string frontAddStringFirst = "FuckOff";
         private static string endAddStringFirst = "LeaveOutPasswords";
-        private static string frontAddStringLast = "U are a monster";
+        private static string frontAddStringLast = "dawdasdawdas";
 
         public static string hashMe(string password)
         {

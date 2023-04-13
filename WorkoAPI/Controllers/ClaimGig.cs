@@ -10,48 +10,46 @@ namespace WorkoAPI.Controllers
     public class SelectGigAnswer : ControllerBase
     {
 
-        private readonly ILogger<SelectGigAnswer> _logger;
+        //private readonly ILogger<SelectGigAnswer> _logger;
 
-        public SelectGigAnswer(ILogger<SelectGigAnswer> logger)
+        /*public SelectGigAnswer(ILogger<SelectGigAnswer> logger)
         {
             _logger = logger;
-        }
+        }*/
 
         [HttpPost(Name = "SelectGigAnswer")]
         public async Task<IActionResult> Post([FromForm]string userId, [FromForm]string token, [FromForm]string gigId, [FromForm]string solutionId)
         {
-            using (IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession())
-            {
-                //User authentication.
-                if(!Token.verify(userId,token)){ return Unauthorized();}
-                
-                //Finding the gig.
-                Gig? gig = await session.Query<Gig>().Where(x => x.id == gigId && x.active == true).FirstAsync();
-                if(gig == null) { return NotFound("Gig doesen't exist!"); }
+            using IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession();
+            //User authentication.
+            if (!Token.verify(userId, token)) { return Unauthorized(); }
 
-                //Only the gig author should be able to do this.
-                if(userId != gig.authorUserId) { return Unauthorized(); }
+            //Finding the gig.
+            Gig? gig = await session.Query<Gig>().Where(x => x.id == gigId && x.active == true).FirstAsync();
+            if (gig == null) { return NotFound("Gig doesen't exist!"); }
 
-                //Find the solution to be selected as best.
-                Solution? solution = await session.Query<Solution>().Where(x => x.id == solutionId).FirstAsync();
-                if (solution == null) { return NotFound("Solution doesen't exist! Ironic..."); }
+            //Only the gig author should be able to do this.
+            if (userId != gig.authorUserId) { return Unauthorized(); }
 
-                //Deactivate the gig and select that solution.
-                gig.active = false;
-                solution.isBest = true;
+            //Find the solution to be selected as best.
+            Solution? solution = await session.Query<Solution>().Where(x => x.id == solutionId).FirstAsync();
+            if (solution == null) { return NotFound("Solution doesen't exist! Ironic..."); }
 
-                //Find the solver and cash out the points.
-                User solver = await session.Query<User>().Where(x => x.Id == solution.authorId).FirstAsync();
-                solver.balance += gig.rewardPoints;
+            //Deactivate the gig and select that solution.
+            gig.active = false;
+            solution.isBest = true;
 
-                //Logging the transaction asynchronously.
-                Task.Run(() => Logger.logTransaction(gig.authorUserId, solver.Id, gig.rewardPoints));
+            //Find the solver and cash out the points.
+            User solver = await session.Query<User>().Where(x => x.Id == solution.authorId).FirstAsync();
+            solver.balance += gig.rewardPoints;
 
-                await session.SaveChangesAsync();
-                return Ok();
-            }
+            //Logging the transaction asynchronously.
+            _ = Task.Run(() => Logger.logTransaction(gig.authorUserId, solver.Id, gig.rewardPoints));
 
-            
+            await session.SaveChangesAsync();
+            return Ok();
+
+
         }       
     }
 }
