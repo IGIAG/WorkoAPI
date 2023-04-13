@@ -18,22 +18,35 @@ namespace WorkoAPI.Controllers
             _logger = logger;
         }*/
 
+
+        public class SubmitGigSolutionForm
+        {
+            public string userId { get; set; }
+
+            public string token { get; set; }
+
+            public string gigId { get; set; }
+
+            public string content { get; set; }
+
+        }
+
         [HttpPost(Name = "SubmitGigSolution")]
-        public async Task<IActionResult> Post([FromForm] string userId, [FromForm] string token, [FromForm] string gigId, [FromForm]string content)
+        public async Task<IActionResult> Post(SubmitGigSolutionForm form)
         {
             using IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession();
             //User authentication
-            if (!Token.verify(userId, token)) { return Unauthorized(); }
+            if (!Token.verify(form.userId, form.token)) { return Unauthorized(); }
 
             //Get the user and gig
-            User user = await session.Query<User>().Where(x => x.Id == userId).FirstOrDefaultAsync();
-            Gig? gig = await session.Query<Gig>().Where(x => x.id == gigId && x.active == true).FirstAsync();
+            User user = await session.Query<User>().Where(x => x.Id == form.userId).FirstOrDefaultAsync();
+            Gig? gig = await session.Query<Gig>().Where(x => x.id == form.gigId && x.active == true).FirstAsync();
 
             //Check if gig exists
             if (gig == null) { return NotFound("Gig doesen't exist!"); }
 
             //Create the solution
-            Solution solution = new(Guid.NewGuid().ToString(), user.Id, gig.id, content);
+            Solution solution = new(Guid.NewGuid().ToString(), user.Id, gig.id, form.content);
 
             //Add solution to gig
             gig.solutions = gig.solutions.Append(solution.id);

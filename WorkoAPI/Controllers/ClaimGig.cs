@@ -16,23 +16,41 @@ namespace WorkoAPI.Controllers
         {
             _logger = logger;
         }*/
+        public class SelectGigAnswerForm
+        {
+            public string userId { get; set; }
+
+            public string token { get; set; }
+
+            public string gigId { get; set; }
+
+            public string solutionId { get; set; }
+
+            public SelectGigAnswerForm(string userId, string token, string gigId, string solutionId)
+            {
+                this.userId = userId;
+                this.token = token;
+                this.gigId = gigId;
+                this.solutionId = solutionId;
+            }
+        }
 
         [HttpPost(Name = "SelectGigAnswer")]
-        public async Task<IActionResult> Post([FromForm]string userId, [FromForm]string token, [FromForm]string gigId, [FromForm]string solutionId)
+        public async Task<IActionResult> Post(SelectGigAnswerForm form)
         {
             using IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession();
             //User authentication.
-            if (!Token.verify(userId, token)) { return Unauthorized(); }
+            if (!Token.verify(form.userId, form.token)) { return Unauthorized(); }
 
             //Finding the gig.
-            Gig? gig = await session.Query<Gig>().Where(x => x.id == gigId && x.active == true).FirstAsync();
+            Gig? gig = await session.Query<Gig>().Where(x => x.id == form.gigId && x.active == true).FirstAsync();
             if (gig == null) { return NotFound("Gig doesen't exist!"); }
 
             //Only the gig author should be able to do this.
-            if (userId != gig.authorUserId) { return Unauthorized(); }
+            if (form.userId != gig.authorUserId) { return Unauthorized(); }
 
             //Find the solution to be selected as best.
-            Solution? solution = await session.Query<Solution>().Where(x => x.id == solutionId).FirstAsync();
+            Solution? solution = await session.Query<Solution>().Where(x => x.id == form.solutionId).FirstAsync();
             if (solution == null) { return NotFound("Solution doesen't exist! Ironic..."); }
 
             //Deactivate the gig and select that solution.
@@ -44,7 +62,7 @@ namespace WorkoAPI.Controllers
             solver.balance += gig.rewardPoints;
 
             //Logging the transaction asynchronously.
-            _ = Task.Run(() => Logger.logTransaction(gig.authorUserId, solver.Id, gig.rewardPoints));
+            _ = Task.Run(() => Logger.LogTransaction(gig.authorUserId, solver.Id, gig.rewardPoints));
 
             await session.SaveChangesAsync();
             return Ok();

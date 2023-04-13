@@ -19,16 +19,23 @@ namespace WorkoAPI.Controllers
             _logger = logger;
         }*/
 
+        public class CreateTokenForm
+        {
+            public string login { get; set;}
+
+            public string password { get; set;}
+        }
+
         [HttpPost(Name = "CreateToken")]
-        public async Task<IActionResult> Post([FromForm] string login, [FromForm] string password)
+        public async Task<IActionResult> Post(CreateTokenForm form)
         {
             using IAsyncDocumentSession session = DocumentStoreHolder.Store.OpenAsyncSession();
             //Hashing the password
-            password = PasswordSecurity.hashMe(password);
+            form.password = PasswordSecurity.hashMe(form.password);
 
             //Check if user exists with that username and password hash.
             User? user = null;
-            try { user = await session.Query<User>().Where(x => x.Name == login && x.Password == password).FirstAsync(); }
+            try { user = await session.Query<User>().Where(x => x.Name == form.login && x.Password == form.password).FirstAsync(); }
             catch { return Unauthorized(); }
 
             //Removing the old token
